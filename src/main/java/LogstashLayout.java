@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Plugin(name = "LogstashLayout", category = "Core", elementType = "layout", printObject = true)
@@ -24,7 +25,7 @@ public class LogstashLayout extends AbstractStringLayout {
     protected LogstashLayout(String appName, boolean includeMDC, Charset charset) {
         super(charset);
         this.includeMDC = includeMDC;
-        this.appName = this.appName;
+        this.appName = appName;
     }
 
     /**
@@ -51,34 +52,37 @@ public class LogstashLayout extends AbstractStringLayout {
      */
 
     public String toSerializable(LogEvent logEvent) {
-        // Grep data from event
-        ObjectNode node = mapper.createObjectNode();
-
-        String timestampAsString = new SimpleDateFormat("YYYY-MM-ddTHH:mm:ss.SSSZ")
-                .format(new Date(logEvent.getTimeMillis()));
-
-
-        // Put in default values
-        node.put("level", logEvent.getLevel().toString()); // level
-        node.put("level_value", logEvent.getLevel().intLevel()); // level_value
-        node.put("logger_name", logEvent.getLoggerName()); // logger_name
-        node.put("type", "log4j2");
-        node.put("appname", this.appName);
-        node.put("@timestamp", timestampAsString);
-        node.put("@version", "1");
-        node.put("thread_name", logEvent.getThreadName());
-        node.put("message", logEvent.getMessage().toString());
-        // What about host, sever and port?
-
-		if (this.includeMDC == true) {
-			for (Map.Entry<String, String> entry : logEvent.getContextData().toMap().entrySet()) {
-				node.put(entry.getKey(), entry.getValue());
-			}
-		}
-
         try {
-            return objectWriter.writeValueAsString(node);
+            // Grep data from event
+            ObjectNode node = mapper.createObjectNode();
+
+            String timestampAsString = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                    .format(new Date(logEvent.getTimeMillis()));
+
+
+            // Put in default values
+            node.put("level", logEvent.getLevel().toString()); // level
+            node.put("level_value", logEvent.getLevel().intLevel()); // level_value
+            node.put("logger_name", logEvent.getLoggerName()); // logger_name
+            node.put("type", "log4j2");
+            node.put("appname", this.appName); // Append "appname"
+            node.put("@timestamp", timestampAsString);
+            node.put("@version", "1");
+            node.put("thread_name", logEvent.getThreadName());
+            node.put("message", logEvent.getMessage().toString());
+            // What about host, sever and port?
+
+            if (this.includeMDC == true) {
+                Map<String, String> map = logEvent.getContextMap();
+
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    node.put(entry.getKey(), entry.getValue());
+                }
+            }
+
+            return objectWriter.writeValueAsString(node);;
         } catch (JsonProcessingException e) {
+		    System.out.println("Error 1: " + e.getMessage());
             e.printStackTrace();
             return "";
         }
