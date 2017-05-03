@@ -19,9 +19,11 @@ public class LogstashLayout extends AbstractStringLayout {
     private ObjectMapper mapper = new ObjectMapper();
     private ObjectWriter objectWriter = mapper.writer();
     private String appName;
+    private boolean includeMDC;
 
-    protected LogstashLayout(String appName, Charset charset) {
+    protected LogstashLayout(String appName, boolean includeMDC, Charset charset) {
         super(charset);
+        this.includeMDC = includeMDC;
         this.appName = this.appName;
     }
 
@@ -68,9 +70,11 @@ public class LogstashLayout extends AbstractStringLayout {
         node.put("message", logEvent.getMessage().toString());
         // What about host, sever and port?
 
-        for (Map.Entry<String, String> entry : logEvent.getContextData().toMap().entrySet()) {
-            node.put(entry.getKey(), entry.getValue());
-        }
+		if (this.includeMDC == true) {
+			for (Map.Entry<String, String> entry : logEvent.getContextData().toMap().entrySet()) {
+				node.put(entry.getKey(), entry.getValue());
+			}
+		}
 
         try {
             return objectWriter.writeValueAsString(node);
@@ -83,7 +87,8 @@ public class LogstashLayout extends AbstractStringLayout {
     @PluginFactory
     public static LogstashLayout createLayout(
             @PluginAttribute(value = "appname") String appName,
+			@PluginAttribute(value = "includeMDC") boolean includeMDC,
             @PluginAttribute(value = "charset", defaultString = "UTF-8") Charset charset) {
-        return new LogstashLayout(appName, charset);
+        return new LogstashLayout(appName, includeMDC, charset);
     }
 }
