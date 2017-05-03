@@ -80,7 +80,7 @@ public class LogstashLayout extends AbstractStringLayout {
                 }
             }
 
-            return objectWriter.writeValueAsString(node);;
+            return objectWriter.writeValueAsString(node);
         } catch (JsonProcessingException e) {
 		    System.out.println("Error 1: " + e.getMessage());
             e.printStackTrace();
