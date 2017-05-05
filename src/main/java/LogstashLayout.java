@@ -8,6 +8,8 @@ import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.AbstractStringLayout;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -21,11 +23,17 @@ public class LogstashLayout extends AbstractStringLayout {
     private ObjectWriter objectWriter = mapper.writer();
     private String appName;
     private boolean includeMDC;
+    private String hostName;
 
     protected LogstashLayout(String appName, boolean includeMDC, Charset charset) {
         super(charset);
         this.includeMDC = includeMDC;
         this.appName = appName;
+        try {
+            this.hostName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            this.hostName = "undefined";
+        }
     }
 
     /**
@@ -61,6 +69,8 @@ public class LogstashLayout extends AbstractStringLayout {
 
 
             // Put in default values
+            node.put("host", this.hostName);
+            node.put("port", "1");
             node.put("level", logEvent.getLevel().toString()); // level
             node.put("level_value", logEvent.getLevel().intLevel()); // level_value
             node.put("logger_name", logEvent.getLoggerName()); // logger_name
@@ -80,9 +90,9 @@ public class LogstashLayout extends AbstractStringLayout {
                 }
             }
 
-            return objectWriter.writeValueAsString(node);
+            return objectWriter.writeValueAsString(node) + "\r\n";
         } catch (JsonProcessingException e) {
-		    System.out.println("Error 1: " + e.getMessage());
+		    System.out.println("Error: " + e.getMessage());
             e.printStackTrace();
             return "";
         }
