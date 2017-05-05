@@ -8,3 +8,4 @@ Simple plugin to use layout with log4j2. Usage:
      <LogstashLayout appname="myTestApplication" charset="UTF-8" includeMDC="true"/>
 </Socket>
 `
+To build it use "mvn package"
