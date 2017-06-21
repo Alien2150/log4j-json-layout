@@ -1,6 +1,6 @@
 # log4j-json-layout
 
-Simple plugin to use layout with log4j2. Usage:
+Simple plugin to use Logstash with log4j2. Usage:
 
 
 `
